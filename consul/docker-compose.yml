@@ -1,0 +1,52 @@
+version: '2.1'
+
+services:
+
+  consul-agent-1: &consul-agent
+    image: consul:latest
+    container_name: consul-agent-1
+    networks:
+      - consul-demo
+    command: "agent -retry-join consul-server-bootstrap -client 0.0.0.0"
+
+  consul-agent-2:
+    <<: *consul-agent
+    container_name: consul-agent-2
+
+  consul-agent-3:
+    <<: *consul-agent
+    container_name: consul-agent-3
+
+  consul-server-1: &consul-server
+    <<: *consul-agent
+    command: "agent -server -retry-join consul-server-bootstrap -client 0.0.0.0"
+    container_name: consul-server-1
+
+  consul-server-2:
+    <<: *consul-server
+    container_name: consul-server-2
+
+  consul-server-bootstrap:
+    <<: *consul-agent
+    ports:
+      - "8400:8400"
+      - "8500:8500"
+      - "8600:8600"
+      - "8600:8600/udp"
+    command: "agent -server -bootstrap-expect 3 -ui -client 0.0.0.0"
+    container_name: consul-server-bootstrap
+
+  api:
+    build: ../
+    networks:
+      - consul-demo
+    container_name: api
+  api-2:
+    build: ../
+    networks:
+      - consul-demo
+    container_name: api-2
+
+
+networks:
+  consul-demo:
